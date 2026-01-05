@@ -5,7 +5,7 @@ import react from '@vitejs/plugin-react';
 export default defineConfig({
   plugins: [react()],
   // Relative base path is essential for GitHub Pages sub-directory hosting
-  base: './', 
+  base: './Proofreader-AI-v0.1', 
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
