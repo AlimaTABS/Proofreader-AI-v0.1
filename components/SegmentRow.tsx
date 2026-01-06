@@ -116,7 +116,7 @@ export const SegmentRow: React.FC<SegmentRowProps> = ({
                 ) : (
                     <>
                         <Sparkles className="w-4 h-4" />
-                        AI Semantic Audit
+                        Check
                     </>
                 )}
             </button>
