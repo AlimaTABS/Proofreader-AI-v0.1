@@ -18,8 +18,8 @@ export const Header: React.FC<HeaderProps> = ({ selectedLanguage, onLanguageChan
             <ShieldCheck className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-gray-900 tracking-tight">Proofreader</h1>
-            <p className="text-xs text-gray-500 font-medium hidden sm:block">AI Quality Control</p>
+            <h1 className="text-xl font-bold text-gray-900 tracking-tight">SGC Proofreader</h1>
+            <p className="text-xs text-gray-500 font-medium hidden sm:block">Check translation errors</p>
           </div>
         </div>
 
