@@ -23,13 +23,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          # (Removed: cache: npm)
 
-- run: npm install
+      - run: npm install
 
-- run: npm run build
-  env:
-    VITE_GEMINI_API_KEY: ${{ secrets.VITE_GEMINI_API_KEY }}
+      - run: npm run build
+        env:
+          VITE_GEMINI_API_KEY: ${{ secrets.VITE_GEMINI_API_KEY }}
 
       - uses: actions/upload-pages-artifact@v3
         with:
