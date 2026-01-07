@@ -1,77 +1,89 @@
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, Type } from "@google/genai";
 
-const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
-const callGemini = async (prompt: string): Promise<string> => {
-  let apiKey = '';
-  
-  // Safe check for process existence to prevent ReferenceErrors in browser
-  try {
-    if (typeof process !== 'undefined' && process.env && process.env.API_KEY) {
-      apiKey = process.env.API_KEY;
-    }
-  } catch (e) {
-    console.error("Environment variable access failed", e);
-  }
-
-  if (!apiKey) {
-    return "API Configuration Error: API Key missing or process.env not defined. Please check deployment settings.";
-  }
-
-  const ai = new GoogleGenAI({ apiKey });
-  const maxRetries = 3;
-  const baseDelay = 2000;
-  let lastError: any = null;
-
-  for (let attempt = 0; attempt < maxRetries; attempt++) {
-    try {
-      const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
-        contents: prompt,
-      });
-      return response.text || "No response generated.";
-    } catch (error: any) {
-      lastError = error;
-      const errorStr = error.toString();
-      const isQuotaError = errorStr.includes("429") || errorStr.toLowerCase().includes("quota");
-      
-      if (isQuotaError && attempt < maxRetries - 1) {
-        await wait(baseDelay * Math.pow(2, attempt));
-        continue;
-      }
-      break;
-    }
-  }
-
-  return `Analysis failed: ${lastError?.message || "An unknown error occurred"}.`;
-};
-
-export const analyzeWordByWord = async (sourceText: string, targetText: string, targetLanguage: string): Promise<string> => {
-  if (!sourceText.trim() || !targetText.trim()) return "Error: Source and target text required.";
-  const prompt = `
-    Analyze the following ${targetLanguage} sentence by breaking it down into individual words or phrases.
-    
-    ${targetLanguage} Sentence: "${targetText}"
-    English Context: "${sourceText}"
-    
-    TASK: Create a literal breakdown table. 
-    IMPORTANT: Output ONLY a Markdown table with columns: | ${targetLanguage} Word | English Equivalent | Context/Notes |
-  `;
-  return callGemini(prompt);
-};
+export interface AnalysisResult {
+  feedback: string;
+  wordBreakdown: Array<{
+    targetWord: string;
+    sourceEquivalent: string;
+    context: string;
+  }>;
+}
 
 export const analyzeTranslation = async (
   sourceText: string,
   targetText: string,
-  targetLanguage: string
-): Promise<string> => {
-  if (!sourceText.trim() || !targetText.trim()) return "Please provide both texts for analysis.";
-  const prompt = `
+  targetLanguage: string,
+  apiKey: string
+): Promise<AnalysisResult | string> => {
+  if (!apiKey) {
+    return "API Key is missing. Please click the 'Set API Key' button in the header.";
+  }
+
+  if (!sourceText.trim() || !targetText.trim()) {
+    return "Please provide both source and target text for analysis.";
+  }
+
+  try {
+    const ai = new GoogleGenAI({ apiKey });
+
+    const prompt = `
+      You are a professional linguistic quality assurance (LQA) expert.
+      
       Target Language: ${targetLanguage}
       English Source: "${sourceText}"
       Target Translation: "${targetText}"
       
-      Compare the English text to the Target text. Identify missing words, wrong terminology, or meaning contradictions. Provide bullet points.
+      Tasks:
+      1. FEEDBACK: Compare meaning, omissions, and terminology. Provide a concise bulleted audit.
+      2. BREAKDOWN: Provide a detailed word-by-word or phrase-by-phrase breakdown. 
+      
+      CRITICAL: For the "context" field in the breakdown, provide specific grammatical details:
+      - Part of speech (Noun, Verb, Adjective, etc.)
+      - Number (Singular/Plural)
+      - Person (First, Second, Third)
+      - Tense/Aspect (Present, Past, Continuous, etc.)
+      - Case/Gender where applicable.
+      
+      Example for Turkish "seviyorum": "First-person singular present continuous form of the verb 'sevmek' (to love)."
+      Example for French "le": "Masculine singular definite article."
+      
+      Format the response as a JSON object.
     `;
-  return callGemini(prompt);
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-pro-preview',
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            feedback: {
+              type: Type.STRING,
+              description: "Audit feedback.",
+            },
+            wordBreakdown: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  targetWord: { type: Type.STRING },
+                  sourceEquivalent: { type: Type.STRING },
+                  context: { type: Type.STRING },
+                },
+                required: ["targetWord", "sourceEquivalent", "context"],
+              },
+            },
+          },
+          required: ["feedback", "wordBreakdown"],
+        },
+      },
+    });
+
+    const result = JSON.parse(response.text || "{}");
+    return result as AnalysisResult;
+  } catch (error: any) {
+    console.error("Gemini Analysis Error:", error);
+    return "An error occurred during AI analysis. Please check your API key and try again.";
+  }
 };

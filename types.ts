@@ -14,6 +14,12 @@ export enum SegmentCategory {
   None = 'None'
 }
 
+export interface WordBreakdown {
+  targetWord: string;
+  sourceEquivalent: string;
+  context: string;
+}
+
 export interface Segment {
   id: string;
   sourceText: string;
@@ -21,9 +27,8 @@ export interface Segment {
   status: SegmentStatus;
   category: SegmentCategory;
   aiFeedback: string | null;
-  wordByWord: string | null;
+  wordBreakdown?: WordBreakdown[];
   isAnalyzing: boolean;
-  isAnalyzingWords: boolean;
 }
 
 export type TargetLanguage = string;

@@ -6,7 +6,7 @@ export default defineConfig({
   plugins: [react()],
   // Using './' ensures that assets are loaded relative to the index.html location.
   // This prevents 404 errors for JS/CSS files on GitHub Pages projects.
-  base: '/Proofreader-AI-v0.1',
+  base: './',
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
