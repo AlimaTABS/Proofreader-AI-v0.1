@@ -3,9 +3,19 @@ import { GoogleGenAI } from "@google/genai";
 const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 const callGemini = async (prompt: string): Promise<string> => {
-  const apiKey = process.env.API_KEY;
+  let apiKey = '';
+  
+  // Safe check for process existence to prevent ReferenceErrors in browser
+  try {
+    if (typeof process !== 'undefined' && process.env && process.env.API_KEY) {
+      apiKey = process.env.API_KEY;
+    }
+  } catch (e) {
+    console.error("Environment variable access failed", e);
+  }
+
   if (!apiKey) {
-    return "API Configuration Error: API Key missing.";
+    return "API Configuration Error: API Key missing or process.env not defined. Please check deployment settings.";
   }
 
   const ai = new GoogleGenAI({ apiKey });
