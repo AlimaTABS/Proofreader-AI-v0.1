@@ -100,7 +100,7 @@ const App: React.FC = () => {
       <footer className="bg-white border-t border-gray-200 py-8">
         <div className="max-w-7xl mx-auto px-4 text-center">
           <p className="text-gray-400 text-[10px] font-black uppercase tracking-widest">
-             © {new Date().getFullYear()} Shepherds Global Classroom
+  © {new Date().getFullYear()} Shepherds Global Classroom
           </p>       
         </div>
       </footer>
