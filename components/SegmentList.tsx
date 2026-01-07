@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Segment } from '../types';
 import { SegmentRow } from './SegmentRow';
@@ -10,7 +9,6 @@ interface SegmentListProps {
   onUpdate: (id: string, updates: Partial<Segment>) => void;
   onDelete: (id: string) => void;
   onRunAnalysis: (id: string) => void;
-  onTranslate: (id: string) => void;
   onRunWordAnalysis: (id: string) => void;
   onAddSegment: () => void;
 }
@@ -21,13 +19,11 @@ export const SegmentList: React.FC<SegmentListProps> = ({
   onUpdate,
   onDelete,
   onRunAnalysis,
-  onTranslate,
   onRunWordAnalysis,
   onAddSegment,
 }) => {
   return (
     <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-32">
-      {/* Main Segment List */}
       <div className="space-y-4">
         {segments.map((segment) => (
           <SegmentRow
@@ -37,13 +33,11 @@ export const SegmentList: React.FC<SegmentListProps> = ({
             onUpdate={onUpdate}
             onDelete={onDelete}
             onRunAnalysis={onRunAnalysis}
-            onTranslate={onTranslate}
             onRunWordAnalysis={onRunWordAnalysis}
           />
         ))}
       </div>
 
-      {/* Action Footer */}
       <div className="mt-12 flex flex-col items-center gap-4">
         <button
           onClick={onAddSegment}
