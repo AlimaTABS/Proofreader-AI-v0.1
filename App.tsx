@@ -14,9 +14,7 @@ const API_KEY_STORAGE = 'bilingual_proofreader_api_key';
 
 const App: React.FC = () => {
   const [apiKey, setApiKey] = useState<string>(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem(API_KEY_STORAGE) || '';
-    }
+    if (typeof window !== 'undefined') return localStorage.getItem(API_KEY_STORAGE) || '';
     return '';
   });
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -27,10 +25,7 @@ const App: React.FC = () => {
   };
 
   const [targetLanguage, setTargetLanguage] = useState<string>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem(LANGUAGE_KEY);
-      return saved || 'French';
-    }
+    if (typeof window !== 'undefined') return localStorage.getItem(LANGUAGE_KEY) || 'French';
     return 'French';
   });
 
@@ -102,8 +97,12 @@ const App: React.FC = () => {
     }
 
     updateSegment(id, { isAnalyzing: true, aiFeedback: null });
-    const feedback = await analyzeTranslation(segment.sourceText, segment.targetText, targetLanguage, apiKey);
-    updateSegment(id, { isAnalyzing: false, aiFeedback: feedback, status: SegmentStatus.Reviewed });
+    try {
+      const feedback = await analyzeTranslation(segment.sourceText, segment.targetText, targetLanguage, apiKey);
+      updateSegment(id, { isAnalyzing: false, aiFeedback: feedback, status: SegmentStatus.Reviewed });
+    } catch (e) {
+      updateSegment(id, { isAnalyzing: false });
+    }
   }, [segments, targetLanguage, apiKey, updateSegment]);
 
   return (
