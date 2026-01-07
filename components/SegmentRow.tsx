@@ -63,7 +63,7 @@ export const SegmentRow: React.FC<SegmentRowProps> = ({
           <thead>
             <tr className="border-b border-gray-200">
               {headers.map((header, i) => (
-                <th key={i} className="py-2 px-2 font-bold text-gray-400 uppercase tracking-tighter">{header}</th>
+                <th key={i} className="py-2 px-2 font-bold text-gray-400 uppercase tracking-tighter whitespace-nowrap">{header}</th>
               ))}
             </tr>
           </thead>
@@ -71,7 +71,7 @@ export const SegmentRow: React.FC<SegmentRowProps> = ({
             {bodyRows.map((row, i) => (
               <tr key={i} className="hover:bg-gray-50 transition-colors">
                 {row.map((cell, j) => (
-                  <td key={j} className={`py-2 px-2 text-gray-700 ${j === 1 && isRtl ? 'text-right font-medium' : ''}`}>
+                  <td key={j} className={`py-2 px-2 text-gray-700 ${j === 0 && isRtl ? 'text-right font-medium' : ''}`}>
                     {cell}
                   </td>
                 ))}
@@ -86,6 +86,7 @@ export const SegmentRow: React.FC<SegmentRowProps> = ({
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden transition-all duration-200 hover:shadow-md mb-6">
       <div className="grid grid-cols-1 lg:grid-cols-3 divide-y lg:divide-y-0 lg:divide-x divide-gray-200">
+        {/* Pane 1 */}
         <div className="p-4 flex flex-col gap-2">
           <div className="flex justify-between items-center mb-1">
             <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">1. English Source</span>
@@ -94,16 +95,18 @@ export const SegmentRow: React.FC<SegmentRowProps> = ({
             className="w-full min-h-[160px] p-3 text-sm text-gray-800 bg-gray-50 border border-gray-100 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none resize-none"
             value={segment.sourceText}
             onChange={(e) => onUpdate(segment.id, { sourceText: e.target.value })}
+            placeholder="Enter source text..."
           />
         </div>
 
+        {/* Pane 2 */}
         <div className="p-4 flex flex-col gap-2 bg-slate-50/20">
           <div className="flex justify-between items-center mb-1">
             <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">2. {targetLanguage} Translation</span>
             <button 
               onClick={() => onTranslate(segment.id)}
               disabled={segment.isTranslating || !segment.sourceText}
-              className="flex items-center gap-1 text-[10px] font-bold text-indigo-600 hover:text-indigo-800 disabled:opacity-30 uppercase tracking-tighter"
+              className="flex items-center gap-1 text-[10px] font-bold text-indigo-600 hover:text-indigo-800 disabled:opacity-30 uppercase tracking-tighter transition-opacity"
             >
               {segment.isTranslating ? 'Translating...' : <><Wand2 className="w-3 h-3"/> AI Translate</>}
             </button>
@@ -113,18 +116,20 @@ export const SegmentRow: React.FC<SegmentRowProps> = ({
             value={segment.targetText}
             onChange={(e) => onUpdate(segment.id, { targetText: e.target.value })}
             dir={isRtl ? 'rtl' : 'ltr'}
+            placeholder={`Enter ${targetLanguage} translation...`}
           />
         </div>
 
+        {/* Pane 3: Literal WORD BY WORD */}
         <div className="p-4 flex flex-col gap-2 bg-emerald-50/10">
           <div className="flex justify-between items-center mb-1">
-            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">3. WORD BY WORD Translation</span>
+            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">3. WORD BY WORD Breakdown</span>
             <button 
               onClick={() => onRunWordAnalysis(segment.id)}
               disabled={segment.isAnalyzingWords || !segment.targetText}
               className="flex items-center gap-1 text-[10px] font-bold text-emerald-600 hover:text-emerald-800 disabled:opacity-30 uppercase tracking-tighter"
             >
-              {segment.isAnalyzingWords ? 'Processing...' : <><BookOpen className="w-3 h-3"/> View Table</>}
+              {segment.isAnalyzingWords ? 'Processing...' : <><BookOpen className="w-3 h-3"/> View Mapping</>}
             </button>
           </div>
           <div className="w-full min-h-[160px] p-3 bg-white border border-gray-100 rounded-lg overflow-y-auto max-h-[160px]">
@@ -133,7 +138,7 @@ export const SegmentRow: React.FC<SegmentRowProps> = ({
              ) : (
                <div className="h-full flex flex-col items-center justify-center text-gray-300 gap-2 opacity-60">
                  <BookOpen className="w-6 h-6" />
-                 <p className="text-[10px] text-center">Click "View Table" to see<br/>WORD BY WORD Translation</p>
+                 <p className="text-[10px] text-center">Click "View Mapping" to see<br/>the literal word-by-word breakdown</p>
                </div>
              )}
           </div>
@@ -146,7 +151,7 @@ export const SegmentRow: React.FC<SegmentRowProps> = ({
             <select
               value={segment.status}
               onChange={(e) => onUpdate(segment.id, { status: e.target.value as SegmentStatus })}
-              className={`appearance-none pl-9 pr-8 py-1.5 rounded-md text-xs font-bold border ${getStatusColor(segment.status)}`}
+              className={`appearance-none pl-9 pr-8 py-1.5 rounded-md text-xs font-bold border transition-colors ${getStatusColor(segment.status)}`}
             >
               {Object.values(SegmentStatus).map((status) => (
                 <option key={status} value={status}>{status}</option>
@@ -173,23 +178,27 @@ export const SegmentRow: React.FC<SegmentRowProps> = ({
             <button
                 onClick={() => onRunAnalysis(segment.id)}
                 disabled={segment.isAnalyzing || !segment.sourceText || !segment.targetText}
-                className="flex items-center gap-2 px-4 py-1.5 rounded-md text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 uppercase"
+                className="flex items-center gap-2 px-4 py-1.5 rounded-md text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 uppercase shadow-sm transition-all"
             >
                 {segment.isAnalyzing ? 'Auditing...' : <><Sparkles className="w-4 h-4" /> Final Audit</>}
             </button>
-            <button onClick={() => onDelete(segment.id)} className="p-1.5 text-gray-400 hover:text-red-600">
+            <button 
+              onClick={() => onDelete(segment.id)} 
+              className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
+              title="Delete segment"
+            >
                 <Trash2 className="w-4 h-4" />
             </button>
         </div>
       </div>
 
       {segment.aiFeedback && (
-        <div className="bg-indigo-50/30 border-t border-indigo-100 p-4">
+        <div className="bg-indigo-50/30 border-t border-indigo-100 p-4 animate-fadeIn">
             <div className="flex items-start gap-3">
                 <Sparkles className="w-4 h-4 text-indigo-400 mt-1" />
                 <div className="flex-1">
                     <h4 className="text-[10px] font-black text-indigo-900 mb-1 uppercase tracking-widest">Quality Audit Results</h4>
-                    <div className="text-sm text-gray-700 whitespace-pre-line">{segment.aiFeedback}</div>
+                    <div className="text-sm text-gray-700 whitespace-pre-line leading-relaxed">{segment.aiFeedback}</div>
                 </div>
             </div>
         </div>
