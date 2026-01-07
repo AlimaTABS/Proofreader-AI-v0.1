@@ -21,7 +21,10 @@ export interface Segment {
   status: SegmentStatus;
   category: SegmentCategory;
   aiFeedback: string | null;
+  wordByWord: string | null;
   isAnalyzing: boolean;
+  isTranslating: boolean;
+  isAnalyzingWords: boolean;
 }
 
 export type TargetLanguage = string;
