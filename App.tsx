@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useEffect } from 'react';
 import { Header } from './components/Header';
 import { SegmentList } from './components/SegmentList';
@@ -7,8 +6,8 @@ import { DEFAULT_SEGMENTS } from './constants';
 import { analyzeTranslation, analyzeWordByWord } from './services/geminiService';
 
 const generateId = () => Math.random().toString(36).substring(2, 9);
-const STORAGE_KEY = 'bilingual_proofreader_v4';
-const LANGUAGE_KEY = 'bilingual_lang_v4';
+const STORAGE_KEY = 'bilingual_proofreader_v5';
+const LANGUAGE_KEY = 'bilingual_lang_v5';
 
 const App: React.FC = () => {
   const [targetLanguage, setTargetLanguage] = useState<string>(() => {
@@ -85,6 +84,7 @@ const App: React.FC = () => {
         selectedLanguage={targetLanguage} 
         onLanguageChange={setTargetLanguage} 
       />
+      
       <main className="flex-grow">
         <SegmentList
           segments={segments}
@@ -96,7 +96,8 @@ const App: React.FC = () => {
           onAddSegment={addSegment}
         />
       </main>
-        <footer className="bg-white border-t border-gray-200 py-8">
+
+      <footer className="bg-white border-t border-gray-200 py-8">
         <div className="max-w-7xl mx-auto px-4 text-center">
           <p className="text-gray-400 text-[10px] font-black uppercase tracking-widest">
              © {new Date().getFullYear()} Shepherds Global Classroom
