@@ -78,30 +78,41 @@ const App: React.FC = () => {
     }]);
   };
 
-  return (
-    <div className="min-h-screen flex flex-col font-sans text-gray-900 bg-gray-50 selection:bg-indigo-100">
-      <Header 
-        selectedLanguage={targetLanguage} 
-        onLanguageChange={setTargetLanguage} 
+   return (
+    <div className="min-h-screen flex flex-col font-sans bg-slate-50">
+      <Header
+        selectedLanguage={targetLanguage}
+        onLanguageChange={handleLanguageChange}
+        onOpenSettings={() => setIsSettingsOpen(true)}
+        hasApiKey={!!apiKey}
       />
-      
-<main className="flex-grow">
+
+      <main className="flex-grow">
         <SegmentList
           segments={segments}
           targetLanguage={targetLanguage}
           onUpdate={updateSegment}
-          onDelete={(id) => setSegments(prev => prev.filter(s => s.id !== id))}
+          onDelete={deleteSegment}
           onRunAnalysis={runAnalysis}
-          onRunWordAnalysis={handleRunWordAnalysis}
           onAddSegment={addSegment}
+          onClearAll={clearAllSegments}
         />
       </main>
 
-      <footer className="bg-white border-t border-gray-200 py-12">
+      <footer className="bg-white border-t border-slate-200 py-10">
         <div className="max-w-7xl mx-auto px-4 text-center">
-          {/* Footer content removed */}
+          <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">
+            © {new Date().getFullYear()} Shepherds Global Classroom
+          </p>
         </div>
       </footer>
+
+      <ApiKeyModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        onSave={handleSaveApiKey}
+        currentKey={apiKey}
+      />
     </div>
   );
 };
