@@ -180,7 +180,7 @@ export const SegmentRow: React.FC<SegmentRowProps> = ({
                 disabled={segment.isAnalyzing || !segment.sourceText || !segment.targetText}
                 className="flex items-center gap-2 px-4 py-1.5 rounded-md text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 uppercase shadow-sm transition-all"
             >
-                {segment.isAnalyzing ? 'Auditing...' : <><Sparkles className="w-4 h-4" /> Final Audit</>}
+                {segment.isAnalyzing ? 'Auditing...' : <><Sparkles className="w-4 h-4" />Check</>}
             </button>
             <button 
               onClick={() => onDelete(segment.id)} 
