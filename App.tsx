@@ -97,15 +97,12 @@ const App: React.FC = () => {
         />
       </main>
 
-      <footer className="bg-white border-t border-gray-200 py-12">
+ <footer className="bg-white border-t border-gray-200 py-12">
         <div className="max-w-7xl mx-auto px-4 text-center">
-          <p className="text-gray-400 text-[11px] font-bold uppercase tracking-[0.25em] opacity-80">
-             © {new Date().getFullYear()} Shepherds Global Classroom
-          </p>       
+          {/* Footer content removed */}
         </div>
       </footer>
     </div>
   );
 };
-
 export default App;
