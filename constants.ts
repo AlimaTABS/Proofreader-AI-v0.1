@@ -10,20 +10,22 @@ export const TARGET_LANGUAGES = [
 export const DEFAULT_SEGMENTS = [
   {
     id: '1',
-    sourceText: "The quick brown fox jumps over the lazy dog.",
-    targetText: "Le renard brun rapide saute par-dessus le chien paresseux.",
-    status: 'Pending',
-    category: 'None',
-    aiFeedback: null,
-    isAnalyzing: false,
-  },
-  {
-    id: '2',
-    sourceText: "Please ensure that all safety protocols are followed strictly within the laboratory environment.",
+    sourceText: "",
     targetText: "",
     status: 'Pending',
     category: 'None',
     aiFeedback: null,
+    wordBreakdown: [],
+    isAnalyzing: false,
+  },
+  {
+    id: '2',
+    sourceText: "",
+    targetText: "",
+    status: 'Pending',
+    category: 'None',
+    aiFeedback: null,
+    wordBreakdown: [],
     isAnalyzing: false,
   }
 ];

@@ -1,7 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { Header } from './components/Header';
 import { SegmentList } from './components/SegmentList';
-import { ApiKeyModal } from './components/ApiKeyModal';
 import { Segment, SegmentStatus, SegmentCategory } from './types';
 import { DEFAULT_SEGMENTS } from './constants';
 import { analyzeTranslation, AnalysisResult } from './services/geminiService';
@@ -10,21 +9,10 @@ const generateId = () => Math.random().toString(36).substring(2, 9);
 
 const STORAGE_KEY = 'bilingual_proofreader_data_v1';
 const LANGUAGE_KEY = 'bilingual_proofreader_lang_v1';
-const API_KEY_STORAGE = 'bilingual_proofreader_api_key';
 
 const App: React.FC = () => {
-  const [apiKey, setApiKey] = useState<string>(() => {
-    return localStorage.getItem(API_KEY_STORAGE) || '';
-  });
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-
-  const handleSaveApiKey = (key: string) => {
-    setApiKey(key);
-    localStorage.setItem(API_KEY_STORAGE, key);
-  };
-
   const [targetLanguage, setTargetLanguage] = useState<string>(() => {
-    return localStorage.getItem(LANGUAGE_KEY) || 'French';
+    return localStorage.getItem(LANGUAGE_KEY) || 'Turkish';
   });
 
   const [segments, setSegments] = useState<Segment[]>(() => {
@@ -69,7 +57,7 @@ const App: React.FC = () => {
   };
 
   const clearAllSegments = () => {
-    if (window.confirm('Clear all segments? This action cannot be undone.')) {
+    if (window.confirm('Clear all segments?')) {
       setSegments([]);
     }
   };
@@ -88,18 +76,12 @@ const App: React.FC = () => {
     const segment = segments.find(s => s.id === id);
     if (!segment) return;
 
-    if (!apiKey) {
-      setIsSettingsOpen(true);
-      return;
-    }
-
     updateSegment(id, { isAnalyzing: true, aiFeedback: null, wordBreakdown: [] });
 
     const result = await analyzeTranslation(
       segment.sourceText,
       segment.targetText,
-      targetLanguage,
-      apiKey
+      targetLanguage
     );
 
     if (typeof result === 'string') {
@@ -117,15 +99,13 @@ const App: React.FC = () => {
             status: SegmentStatus.Reviewed
         });
     }
-  }, [segments, targetLanguage, apiKey, updateSegment]);
+  }, [segments, targetLanguage, updateSegment]);
 
   return (
     <div className="min-h-screen flex flex-col font-sans bg-slate-50">
       <Header 
         selectedLanguage={targetLanguage} 
         onLanguageChange={handleLanguageChange} 
-        onOpenSettings={() => setIsSettingsOpen(true)}
-        hasApiKey={!!apiKey}
       />
       
       <main className="flex-grow">
@@ -142,19 +122,11 @@ const App: React.FC = () => {
 
       <footer className="bg-white border-t border-slate-200 py-10">
         <div className="max-w-7xl mx-auto px-4 text-center">
-          <p className="text-gray-400 text-[10px] font-black uppercase tracking-widest">
+          <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.3em]">
             © {new Date().getFullYear()} Shepherds Global Classroom
           </p>
-      
         </div>
       </footer>
-
-      <ApiKeyModal 
-        isOpen={isSettingsOpen} 
-        onClose={() => setIsSettingsOpen(false)} 
-        onSave={handleSaveApiKey}
-        currentKey={apiKey}
-      />
     </div>
   );
 };

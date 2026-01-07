@@ -9,59 +9,55 @@ export interface AnalysisResult {
   }>;
 }
 
-const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
-
-function getStatusCode(err: any): number | undefined {
-  return err?.code || err?.status || err?.error?.code || err?.response?.status;
-}
-
-function isQuotaError(err: any): boolean {
-  const code = getStatusCode(err);
-  const msg = String(err?.message || err?.error?.message || "");
-  return code === 429 || msg.includes("RESOURCE_EXHAUSTED") || msg.toLowerCase().includes("quota");
-}
-
 export const analyzeTranslation = async (
   sourceText: string,
   targetText: string,
-  targetLanguage: string,
-  apiKey: string
+  targetLanguage: string
 ): Promise<AnalysisResult | string> => {
-  if (!apiKey?.trim()) {
-    return "API Key is missing. Please click the Key icon to add your Google Gemini API Key.";
+  const apiKey = process.env.API_KEY;
+  if (!apiKey) {
+    return "System Error: API Configuration missing.";
   }
 
   if (!sourceText.trim() || !targetText.trim()) {
     return "Please provide both source and target text for analysis.";
   }
 
-  const ai = new GoogleGenAI({ apiKey });
+  try {
+    const ai = new GoogleGenAI({ apiKey });
 
-  // Shorter prompt saves tokens/quota
-  const prompt = `
-You are an LQA expert.
+    const prompt = `
+      You are an expert linguistic auditor performing a high-precision Translation Quality Audit (TQA).
+      
+      Target Language: ${targetLanguage}
+      Source (English): "${sourceText}"
+      Target Translation: "${targetText}"
+      
+      Tasks:
+      1. CRITICAL AUDIT: Identify any of the following issues that contradict the English source text:
+         - Missing Content: Skip words, phrases, or punctuation that alter intent.
+         - Terminology Errors: Use of incorrect or inappropriate terms for the target language context.
+         - Shifts in Meaning: Nuance changes, incorrect tone, or semantic drifting that misrepresents the source.
+         - Summarize these findings in concise bullet points. If perfect, confirm accuracy.
 
-Target language: ${targetLanguage}
-Source (EN): ${JSON.stringify(sourceText.trim())}
-Target: ${JSON.stringify(targetText.trim())}
+      2. GRANULAR BREAKDOWN: Provide a word-by-word mapping of the target text to English equivalents.
+         - For each word, explain the grammatical context (e.g., "Noun, plural", "1st person singular verb", "Direct object marker").
 
-Return JSON with:
-- feedback (string): concise bullet audit (meaning, omissions, terminology).
-- wordBreakdown (array): { targetWord, sourceEquivalent, context }
-context must include grammar info (POS, number, person, tense/aspect, case/gender if applicable).
-`.trim();
+      Return results strictly as a JSON object.
+    `;
 
-  const runOnce = async (): Promise<AnalysisResult> => {
     const response = await ai.models.generateContent({
-      // Flash is cheaper and helps reduce 429 frequency
-      model: "gemini-3-flash-preview",
+      model: 'gemini-3-pro-preview',
       contents: prompt,
       config: {
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
           properties: {
-            feedback: { type: Type.STRING },
+            feedback: { 
+              type: Type.STRING,
+              description: "The audit summary focusing on missing content, terminology, and meaning shifts."
+            },
             wordBreakdown: {
               type: Type.ARRAY,
               items: {
@@ -80,34 +76,12 @@ context must include grammar info (POS, number, person, tense/aspect, case/gende
       },
     });
 
-    const text = response.text || "{}";
-    return JSON.parse(text) as AnalysisResult;
-  };
-
-  const maxRetries = 3;
-  let lastErr: any;
-
-  for (let attempt = 0; attempt <= maxRetries; attempt++) {
-    try {
-      return await runOnce();
-    } catch (err: any) {
-      lastErr = err;
-
-      if (isQuotaError(err) && attempt < maxRetries) {
-        // exponential backoff: 3s, 6s, 12s...
-        const delay = 3000 * Math.pow(2, attempt);
-        await wait(delay);
-        continue;
-      }
-
-      break;
-    }
+    const result = response.text;
+    if (!result) throw new Error("No response from AI");
+    
+    return JSON.parse(result) as AnalysisResult;
+  } catch (error: any) {
+    console.error("Analysis Error:", error);
+    return "An error occurred during linguistic analysis. Please verify your connection and try again.";
   }
-
-  const code = getStatusCode(lastErr);
-  if (code === 429 || isQuotaError(lastErr)) {
-    return "⚠️ API quota/rate limit hit (429). Please wait 30–60 seconds and try again, or use a billing-enabled key.";
-  }
-
-  return `Analysis failed: ${String(lastErr?.message || lastErr)}`;
 };
