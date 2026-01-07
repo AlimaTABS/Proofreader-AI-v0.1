@@ -24,12 +24,10 @@ const callGemini = async (prompt: string, apiKey: string): Promise<string> => {
       lastError = error;
       const errorStr = error.toString();
       
-      // Fatal errors
       if (errorStr.includes("403") || errorStr.includes("API_KEY_INVALID")) {
         return "Invalid API Key. Please click the Key icon in the top right to verify your settings.";
       }
 
-      // Retryable errors (Quota or Server)
       const isQuotaError = errorStr.includes("429") || errorStr.toLowerCase().includes("quota");
       const isServerError = errorStr.includes("503") || errorStr.includes("500");
 
@@ -48,14 +46,14 @@ const callGemini = async (prompt: string, apiKey: string): Promise<string> => {
 
   const errorStr = lastError?.toString() || "";
   if (errorStr.includes("429") || errorStr.toLowerCase().includes("quota")) {
-      return "⚠️ API Quota exceeded. The free tier has strict limits (often 15 requests per minute).\n\nPlease wait 60 seconds before trying again, or consider using a paid API key from a billing-enabled project (https://ai.google.dev/gemini-api/docs/billing).";
+      return "⚠️ API Quota exceeded. The free tier has strict limits (often 15 requests per minute).\n\nPlease wait 60 seconds before trying again, or use a paid API key.";
   }
   
   if (errorStr.includes("503") || errorStr.includes("500")) {
       return "The AI service is currently overloaded or unavailable. Please try again in a few minutes.";
   }
 
-  return `Analysis failed: ${lastError?.message || "An unknown error occurred"}. Check the browser console for details.`;
+  return `Analysis failed: ${lastError?.message || "An unknown error occurred"}.`;
 };
 
 export const translateText = async (sourceText: string, targetLanguage: string, apiKey: string): Promise<string> => {
@@ -67,15 +65,21 @@ export const translateText = async (sourceText: string, targetLanguage: string, 
 export const analyzeWordByWord = async (sourceText: string, targetText: string, targetLanguage: string, apiKey: string): Promise<string> => {
   if (!sourceText.trim() || !targetText.trim()) return "Error: Source and target text required.";
   const prompt = `
-    Provide a word-by-word or phrase-by-phrase breakdown of this translation from English to ${targetLanguage}.
+    Analyze the following ${targetLanguage} sentence by breaking it down into individual words or phrases.
     
-    English: "${sourceText}"
-    ${targetLanguage}: "${targetText}"
+    ${targetLanguage} Sentence: "${targetText}"
+    English Context: "${sourceText}"
     
-    IMPORTANT: Output ONLY a Markdown table with the following columns:
-    | English | ${targetLanguage} | Role/Note |
-    
-    Do not include any introductory text, only the table.
+    TASK: Create a literal breakdown. For every word in the ${targetLanguage} sentence, provide its English equivalent.
+    Example for Turkish "Ben seni çok seviyorum":
+    | Turkish Word | English Equivalent | Role/Grammar |
+    | Ben | I | Pronoun |
+    | seni | you | Pronoun (Accusative) |
+    | çok | very | Adverb |
+    | seviyorum | love | Verb (Present Continuous) |
+
+    IMPORTANT: Output ONLY a Markdown table with these columns:
+    | ${targetLanguage} Word | English Equivalent | Context/Notes |
   `;
   return callGemini(prompt, apiKey);
 };
@@ -86,22 +90,14 @@ export const analyzeTranslation = async (
   targetLanguage: string,
   apiKey: string
 ): Promise<string> => {
-  if (!sourceText.trim() || !targetText.trim()) {
-    return "Please provide both source and target text for analysis.";
-  }
-
+  if (!sourceText.trim() || !targetText.trim()) return "Please provide both texts for analysis.";
   const prompt = `
       Target Language: ${targetLanguage}
       English Source: "${sourceText}"
       Target Translation: "${targetText}"
       
-      Task: Compare the English text to the Target text. 
-      Identify: 
-      1) Missing words/sentences
-      2) Wrong terminology (e.g., if 'Church' was translated as 'Mosque')
-      3) Meaning contradictions. 
-      
-      Provide the output in a clear bullet-point format. If there are no issues, state "No significant errors found."
+      Compare the English text to the Target text. Identify missing words, wrong terminology, or meaning contradictions. Provide bullet points.
     `;
   return callGemini(prompt, apiKey);
 };
+
