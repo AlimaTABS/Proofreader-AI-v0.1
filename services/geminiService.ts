@@ -1,103 +1,89 @@
+import { GoogleGenAI, Type } from "@google/genai";
 
-import { GoogleGenAI } from "@google/genai";
-
-const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
-const callGemini = async (prompt: string, apiKey: string): Promise<string> => {
-  if (!apiKey) {
-    return "API Key is missing. Please click the Key icon in the top right to add your Google Gemini API Key.";
-  }
-
-  const ai = new GoogleGenAI({ apiKey });
-  const maxRetries = 6;
-  const baseDelay = 3000;
-  let lastError: any = null;
-
-  for (let attempt = 0; attempt < maxRetries; attempt++) {
-    try {
-      const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
-        contents: prompt,
-      });
-      return response.text || "No response generated.";
-    } catch (error: any) {
-      lastError = error;
-      const errorStr = error.toString();
-      
-      if (errorStr.includes("403") || errorStr.includes("API_KEY_INVALID")) {
-        return "Invalid API Key. Please click the Key icon in the top right to verify your settings.";
-      }
-
-      const isQuotaError = errorStr.includes("429") || errorStr.toLowerCase().includes("quota");
-      const isServerError = errorStr.includes("503") || errorStr.includes("500");
-
-      if (isQuotaError || isServerError) {
-        const delay = baseDelay * Math.pow(2, attempt);
-        console.warn(`Attempt ${attempt + 1} failed (${isQuotaError ? 'Quota' : 'Server'}). Retrying in ${delay}ms...`);
-        
-        if (attempt < maxRetries - 1) {
-          await wait(delay);
-          continue;
-        }
-      }
-      break;
-    }
-  }
-
-  const errorStr = lastError?.toString() || "";
-  if (errorStr.includes("429") || errorStr.toLowerCase().includes("quota")) {
-      return "⚠️ API Quota exceeded. The free tier has strict limits (often 15 requests per minute).\n\nPlease wait 60 seconds before trying again, or use a paid API key.";
-  }
-  
-  if (errorStr.includes("503") || errorStr.includes("500")) {
-      return "The AI service is currently overloaded or unavailable. Please try again in a few minutes.";
-  }
-
-  return `Analysis failed: ${lastError?.message || "An unknown error occurred"}.`;
-};
-
-export const translateText = async (sourceText: string, targetLanguage: string, apiKey: string): Promise<string> => {
-  if (!sourceText.trim()) return "Error: Source text is empty.";
-  const prompt = `Translate the following English text into ${targetLanguage}. Provide ONLY the translation without any explanation or quotes: "${sourceText}"`;
-  return callGemini(prompt, apiKey);
-};
-
-export const analyzeWordByWord = async (sourceText: string, targetText: string, targetLanguage: string, apiKey: string): Promise<string> => {
-  if (!sourceText.trim() || !targetText.trim()) return "Error: Source and target text required.";
-  const prompt = `
-    Analyze the following ${targetLanguage} sentence by breaking it down into individual words or phrases.
-    
-    ${targetLanguage} Sentence: "${targetText}"
-    English Context: "${sourceText}"
-    
-    TASK: Create a literal breakdown. For every word in the ${targetLanguage} sentence, provide its English equivalent.
-    Example for Turkish "Ben seni çok seviyorum":
-    | Turkish Word | English Equivalent | Role/Grammar |
-    | Ben | I | Pronoun |
-    | seni | you | Pronoun (Accusative) |
-    | çok | very | Adverb |
-    | seviyorum | love | Verb (Present Continuous) |
-
-    IMPORTANT: Output ONLY a Markdown table with these columns:
-    | ${targetLanguage} Word | English Equivalent | Context/Notes |
-  `;
-  return callGemini(prompt, apiKey);
-};
+export interface AnalysisResult {
+  feedback: string;
+  wordBreakdown: Array<{
+    targetWord: string;
+    sourceEquivalent: string;
+    context: string;
+  }>;
+}
 
 export const analyzeTranslation = async (
   sourceText: string,
   targetText: string,
   targetLanguage: string,
   apiKey: string
-): Promise<string> => {
-  if (!sourceText.trim() || !targetText.trim()) return "Please provide both texts for analysis.";
-  const prompt = `
+): Promise<AnalysisResult | string> => {
+  if (!apiKey) {
+    return "API Key is missing. Please click the 'Set API Key' button in the header.";
+  }
+
+  if (!sourceText.trim() || !targetText.trim()) {
+    return "Please provide both source and target text for analysis.";
+  }
+
+  try {
+    const ai = new GoogleGenAI({ apiKey });
+
+    const prompt = `
+      You are a professional linguistic quality assurance (LQA) expert.
+      
       Target Language: ${targetLanguage}
       English Source: "${sourceText}"
       Target Translation: "${targetText}"
       
-      Compare the English text to the Target text. Identify missing words, wrong terminology, or meaning contradictions. Provide bullet points.
+      Tasks:
+      1. FEEDBACK: Compare meaning, omissions, and terminology. Provide a concise bulleted audit.
+      2. BREAKDOWN: Provide a detailed word-by-word or phrase-by-phrase breakdown. 
+      
+      CRITICAL: For the "context" field in the breakdown, provide specific grammatical details:
+      - Part of speech (Noun, Verb, Adjective, etc.)
+      - Number (Singular/Plural)
+      - Person (First, Second, Third)
+      - Tense/Aspect (Present, Past, Continuous, etc.)
+      - Case/Gender where applicable.
+      
+      Example for Turkish "seviyorum": "First-person singular present continuous form of the verb 'sevmek' (to love)."
+      Example for French "le": "Masculine singular definite article."
+      
+      Format the response as a JSON object.
     `;
-  return callGemini(prompt, apiKey);
-};
 
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-pro-preview',
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            feedback: {
+              type: Type.STRING,
+              description: "Audit feedback.",
+            },
+            wordBreakdown: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  targetWord: { type: Type.STRING },
+                  sourceEquivalent: { type: Type.STRING },
+                  context: { type: Type.STRING },
+                },
+                required: ["targetWord", "sourceEquivalent", "context"],
+              },
+            },
+          },
+          required: ["feedback", "wordBreakdown"],
+        },
+      },
+    });
+
+    const result = JSON.parse(response.text || "{}");
+    return result as AnalysisResult;
+  } catch (error: any) {
+    console.error("Gemini Analysis Error:", error);
+    return "An error occurred during AI analysis. Please check your API key and try again.";
+  }
+};
