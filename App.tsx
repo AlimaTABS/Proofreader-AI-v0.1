@@ -6,8 +6,8 @@ import { DEFAULT_SEGMENTS } from './constants';
 import { analyzeTranslation, analyzeWordByWord } from './services/geminiService';
 
 const generateId = () => Math.random().toString(36).substring(2, 9);
-const STORAGE_KEY = 'bilingual_proofreader_v5';
-const LANGUAGE_KEY = 'bilingual_lang_v5';
+const STORAGE_KEY = 'bilingual_proofreader_v6';
+const LANGUAGE_KEY = 'bilingual_lang_v6';
 
 const App: React.FC = () => {
   const [targetLanguage, setTargetLanguage] = useState<string>(() => {
@@ -97,14 +97,11 @@ const App: React.FC = () => {
         />
       </main>
 
-<footer className="bg-white border-t border-gray-200 py-8">
- <div className="max-w-7xl mx-auto px-4 text-center">
-    <p className="text-gray-400 text-[10px] font-black uppercase tracking-widest">
-      © {new Date().getFullYear()} Shepherds Global Classroom
-    </p>
-  </div>
-  </div>
-</footer>       
+      <footer className="bg-white border-t border-gray-200 py-10">
+        <div className="max-w-7xl mx-auto px-4 text-center">
+          <p className="text-gray-400 text-[11px] font-bold uppercase tracking-[0.2em]">
+             © {new Date().getFullYear()} Shepherds Global Classroom
+          </p>       
         </div>
       </footer>
     </div>
