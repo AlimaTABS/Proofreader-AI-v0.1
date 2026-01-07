@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Trash2, Sparkles, CheckCircle, AlertCircle, Clock, BookOpen, Wand2 } from 'lucide-react';
+import { Trash2, Sparkles, CheckCircle, AlertCircle, Clock, BookOpen, Wand2, LucideIcon } from 'lucide-react';
 import { Segment, SegmentStatus, SegmentCategory } from '../types';
 
 interface SegmentRowProps {
@@ -32,24 +32,23 @@ export const SegmentRow: React.FC<SegmentRowProps> = ({
     }
   };
 
-  const StatusIcon = {
+  const statusIcons: Record<SegmentStatus, LucideIcon> = {
     [SegmentStatus.Approved]: CheckCircle,
     [SegmentStatus.NeedsWork]: AlertCircle,
     [SegmentStatus.Reviewed]: CheckCircle,
     [SegmentStatus.Pending]: Clock,
-  }[segment.status];
+  };
 
+  const StatusIcon = statusIcons[segment.status] || Clock;
   const isRtl = ['Arabic', 'Urdu', 'Persian', 'Hebrew'].includes(targetLanguage);
 
-  // Helper to parse Markdown table from Gemini
   const renderWordTable = (markdown: string) => {
-    // If it's an error message rather than a table, show it as text
     if (!markdown.includes('|')) {
         return <div className="text-[11px] text-red-500 font-medium p-2 bg-red-50 rounded border border-red-100">{markdown}</div>;
     }
 
     const rows = markdown.trim().split('\n').filter(row => row.includes('|') && !row.includes('---'));
-    if (rows.length < 1) return <div className="text-xs text-gray-500 italic">Formatting breakdown...</div>;
+    if (rows.length < 1) return <div className="text-xs text-gray-500 italic">Processing...</div>;
 
     const tableData = rows.map(row => 
       row.split('|').map(cell => cell.trim()).filter(cell => cell !== '')
@@ -86,24 +85,18 @@ export const SegmentRow: React.FC<SegmentRowProps> = ({
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden transition-all duration-200 hover:shadow-md mb-6">
-      
-      {/* Three-Pane Comparison Area */}
       <div className="grid grid-cols-1 lg:grid-cols-3 divide-y lg:divide-y-0 lg:divide-x divide-gray-200">
-        
-        {/* Pane 1: Source */}
         <div className="p-4 flex flex-col gap-2">
           <div className="flex justify-between items-center mb-1">
             <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">1. English Source</span>
           </div>
           <textarea
-            className="w-full min-h-[160px] p-3 text-sm text-gray-800 bg-gray-50 border border-gray-100 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none resize-none transition-all"
-            placeholder="Enter source text..."
+            className="w-full min-h-[160px] p-3 text-sm text-gray-800 bg-gray-50 border border-gray-100 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none resize-none"
             value={segment.sourceText}
             onChange={(e) => onUpdate(segment.id, { sourceText: e.target.value })}
           />
         </div>
 
-        {/* Pane 2: AI Translation */}
         <div className="p-4 flex flex-col gap-2 bg-slate-50/20">
           <div className="flex justify-between items-center mb-1">
             <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">2. {targetLanguage} Translation</span>
@@ -116,15 +109,13 @@ export const SegmentRow: React.FC<SegmentRowProps> = ({
             </button>
           </div>
           <textarea
-            className="w-full min-h-[160px] p-3 text-sm text-gray-800 bg-white border border-gray-100 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none resize-none transition-all"
-            placeholder={`Waiting for translation...`}
+            className="w-full min-h-[160px] p-3 text-sm text-gray-800 bg-white border border-gray-100 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none resize-none"
             value={segment.targetText}
             onChange={(e) => onUpdate(segment.id, { targetText: e.target.value })}
             dir={isRtl ? 'rtl' : 'ltr'}
           />
         </div>
 
-        {/* Pane 3: WORD BY WORD Translation */}
         <div className="p-4 flex flex-col gap-2 bg-emerald-50/10">
           <div className="flex justify-between items-center mb-1">
             <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">3. WORD BY WORD Translation</span>
@@ -149,24 +140,19 @@ export const SegmentRow: React.FC<SegmentRowProps> = ({
         </div>
       </div>
 
-      {/* Control Footer */}
       <div className="bg-gray-50 border-t border-gray-200 p-3 flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <div className="relative">
             <select
               value={segment.status}
               onChange={(e) => onUpdate(segment.id, { status: e.target.value as SegmentStatus })}
-              className={`appearance-none pl-9 pr-8 py-1.5 rounded-md text-xs font-bold border focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer uppercase tracking-tight ${getStatusColor(segment.status)}`}
+              className={`appearance-none pl-9 pr-8 py-1.5 rounded-md text-xs font-bold border ${getStatusColor(segment.status)}`}
             >
               {Object.values(SegmentStatus).map((status) => (
                 <option key={status} value={status}>{status}</option>
               ))}
             </select>
-            <StatusIcon className={`absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none ${
-              segment.status === SegmentStatus.NeedsWork ? 'text-red-600' :
-              segment.status === SegmentStatus.Approved ? 'text-green-600' :
-              'text-gray-500'
-            }`} />
+            <StatusIcon className={`absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none ${segment.status === SegmentStatus.NeedsWork ? 'text-red-600' : ''}`} />
           </div>
 
           <div className="flex items-center gap-2">
@@ -174,7 +160,7 @@ export const SegmentRow: React.FC<SegmentRowProps> = ({
             <select
               value={segment.category}
               onChange={(e) => onUpdate(segment.id, { category: e.target.value as SegmentCategory })}
-              className="bg-white border border-gray-200 text-gray-700 text-xs font-medium rounded-md py-1 px-2 focus:ring-2 focus:ring-indigo-500 outline-none"
+              className="bg-white border border-gray-200 text-gray-700 text-xs font-medium rounded-md py-1 px-2"
             >
               {Object.values(SegmentCategory).map((cat) => (
                 <option key={cat} value={cat}>{cat}</option>
@@ -187,34 +173,23 @@ export const SegmentRow: React.FC<SegmentRowProps> = ({
             <button
                 onClick={() => onRunAnalysis(segment.id)}
                 disabled={segment.isAnalyzing || !segment.sourceText || !segment.targetText}
-                className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-xs font-bold text-white transition-all
-                    ${segment.isAnalyzing 
-                        ? 'bg-indigo-400 cursor-wait' 
-                        : 'bg-indigo-600 hover:bg-indigo-700'
-                    } disabled:opacity-50 uppercase tracking-wide`}
+                className="flex items-center gap-2 px-4 py-1.5 rounded-md text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 uppercase"
             >
                 {segment.isAnalyzing ? 'Auditing...' : <><Sparkles className="w-4 h-4" /> Final Audit</>}
             </button>
-
-            <button
-                onClick={() => onDelete(segment.id)}
-                className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
-            >
+            <button onClick={() => onDelete(segment.id)} className="p-1.5 text-gray-400 hover:text-red-600">
                 <Trash2 className="w-4 h-4" />
             </button>
         </div>
       </div>
 
-      {/* Audit Feedback Panel */}
       {segment.aiFeedback && (
         <div className="bg-indigo-50/30 border-t border-indigo-100 p-4">
             <div className="flex items-start gap-3">
                 <Sparkles className="w-4 h-4 text-indigo-400 mt-1" />
                 <div className="flex-1">
                     <h4 className="text-[10px] font-black text-indigo-900 mb-1 uppercase tracking-widest">Quality Audit Results</h4>
-                    <div className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">
-                        {segment.aiFeedback}
-                    </div>
+                    <div className="text-sm text-gray-700 whitespace-pre-line">{segment.aiFeedback}</div>
                 </div>
             </div>
         </div>
