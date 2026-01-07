@@ -148,8 +148,7 @@ const App: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 text-center">
           <p className="text-gray-400 text-[10px] font-black uppercase tracking-widest">
              © {new Date().getFullYear()} Shepherds Global Classroom
-          </p>
-          
+          </p>       
         </div>
       </footer>
 
