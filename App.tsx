@@ -13,17 +13,12 @@ const LANGUAGE_KEY = 'bilingual_proofreader_lang_v1';
 const API_KEY_STORAGE = 'bilingual_proofreader_api_key';
 
 const App: React.FC = () => {
+  // 1. Core State
   const [apiKey, setApiKey] = useState<string>(() => {
     if (typeof window !== 'undefined') return localStorage.getItem(API_KEY_STORAGE) || '';
     return '';
   });
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-
-  const handleSaveApiKey = (key: string) => {
-    setApiKey(key);
-    localStorage.setItem(API_KEY_STORAGE, key);
-  };
-
   const [targetLanguage, setTargetLanguage] = useState<string>(() => {
     if (typeof window !== 'undefined') return localStorage.getItem(LANGUAGE_KEY) || 'French';
     return 'French';
@@ -36,13 +31,14 @@ const App: React.FC = () => {
         try {
           return JSON.parse(saved);
         } catch (e) {
-          console.error("Failed to parse saved segments", e);
+          console.error("Failed to load project state", e);
         }
       }
     }
     return DEFAULT_SEGMENTS;
   });
 
+  // 2. Persistence Side Effects
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(segments));
   }, [segments]);
@@ -50,6 +46,12 @@ const App: React.FC = () => {
   useEffect(() => {
     localStorage.setItem(LANGUAGE_KEY, targetLanguage);
   }, [targetLanguage]);
+
+  // 3. Handlers & AI Logic
+  const handleSaveApiKey = (key: string) => {
+    setApiKey(key);
+    localStorage.setItem(API_KEY_STORAGE, key);
+  };
 
   const updateSegment = useCallback((id: string, updates: Partial<Segment>) => {
     setSegments(prev => prev.map(seg => 
@@ -105,8 +107,23 @@ const App: React.FC = () => {
     }
   }, [segments, targetLanguage, apiKey, updateSegment]);
 
+  const addSegment = () => {
+    setSegments(prev => [...prev, {
+      id: generateId(),
+      sourceText: '',
+      targetText: '',
+      status: SegmentStatus.Pending,
+      category: SegmentCategory.None,
+      aiFeedback: null,
+      wordByWord: null,
+      isAnalyzing: false,
+      isTranslating: false,
+      isAnalyzingWords: false
+    }]);
+  };
+
   return (
-    <div className="min-h-screen flex flex-col font-sans text-gray-900 bg-gray-50">
+    <div className="min-h-screen flex flex-col font-sans text-gray-900 bg-gray-50 selection:bg-indigo-100">
       <Header 
         selectedLanguage={targetLanguage} 
         onLanguageChange={(lang) => setTargetLanguage(lang)} 
@@ -123,24 +140,18 @@ const App: React.FC = () => {
           onRunAnalysis={runAnalysis}
           onTranslate={handleTranslate}
           onRunWordAnalysis={handleRunWordAnalysis}
-          onAddSegment={() => setSegments(prev => [...prev, {
-            id: generateId(),
-            sourceText: '',
-            targetText: '',
-            status: SegmentStatus.Pending,
-            category: SegmentCategory.None,
-            aiFeedback: null,
-            wordByWord: null,
-            isAnalyzing: false,
-            isTranslating: false,
-            isAnalyzingWords: false
-          }])}
+          onAddSegment={addSegment}
         />
       </main>
 
-      <footer className="bg-white border-t border-gray-200 py-6">
-        <div className="max-w-7xl mx-auto px-4 text-center text-gray-400 text-xs">
-          <p>© {new Date().getFullYear()} The Bilingual Proofreader. Professional AI-Assisted QA.</p>
+      <footer className="bg-white border-t border-gray-200 py-8">
+        <div className="max-w-7xl mx-auto px-4 text-center">
+          <p className="text-gray-400 text-[10px] font-black uppercase tracking-widest">
+            The Bilingual Proofreader • High Performance Translation QA Interface
+          </p>
+          <p className="text-gray-300 text-[9px] mt-1">
+            Build v0.2.1 • Local Environment Storage Enabled
+          </p>
         </div>
       </footer>
 
