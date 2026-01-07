@@ -24,7 +24,6 @@ export interface Segment {
   aiFeedback: string | null;
   wordByWord: string | null;
   isAnalyzing: boolean;
-  isTranslating: boolean;
   isAnalyzingWords: boolean;
 }
 
