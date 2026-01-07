@@ -85,7 +85,7 @@ const App: React.FC = () => {
         onLanguageChange={setTargetLanguage} 
       />
       
-      <main className="flex-grow">
+<main className="flex-grow">
         <SegmentList
           segments={segments}
           targetLanguage={targetLanguage}
@@ -97,7 +97,7 @@ const App: React.FC = () => {
         />
       </main>
 
- <footer className="bg-white border-t border-gray-200 py-12">
+      <footer className="bg-white border-t border-gray-200 py-12">
         <div className="max-w-7xl mx-auto px-4 text-center">
           {/* Footer content removed */}
         </div>
@@ -105,4 +105,5 @@ const App: React.FC = () => {
     </div>
   );
 };
+
 export default App;
